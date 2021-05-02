@@ -4,7 +4,7 @@ using System;
 
 namespace SqliteLogger
 {
-    public sealed class SqliteLogger : ILogger
+    public sealed class SqliteLogger : ILogger, IDisposable
     {
         private readonly string _name;
         private readonly SqliteLoggerConfiguration _config;
