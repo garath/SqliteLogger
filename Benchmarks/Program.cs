@@ -5,29 +5,40 @@ using SqliteLogger;
 
 namespace Benchmarks
 {
+    [MemoryDiagnoser]
     [MarkdownExporterAttribute.GitHub]
-    class LoggerBenchmark
+    public class LoggerBenchmark
     {
         private ILogger<Program> logger;
         private ILoggerFactory loggerFactory;
 
-        [Params("Data Source=:memory:", "Data Source=test.db")]
-        public string ConnectionString { get; set; }
-
-        [GlobalSetup(Target = nameof(Derp))]
-        public void GlobalSetupDerp()
+        [GlobalSetup(Target = nameof(SqliteLoggerInMemory))]
+        public void GlobalSetupSqliteLoggerInMemory()
         {
             loggerFactory =
                 LoggerFactory.Create(builder =>
                     builder.AddSqliteLogger(options =>
                     {
-                        options.ConnectionString = ConnectionString;
+                        options.ConnectionString = "Data Source=:memory:";
                     }));
 
             logger = loggerFactory.CreateLogger<Program>();
         }
 
-        [GlobalSetup(Target = nameof(ConsoleDerp))]
+        [GlobalSetup(Target = nameof(SqliteLoggerFile))]
+        public void GlobalSetupSqliteLoggerFile()
+        {
+            loggerFactory =
+                LoggerFactory.Create(builder =>
+                    builder.AddSqliteLogger(options =>
+                    {
+                        options.ConnectionString = "Data Source=test.db";
+                    }));
+
+            logger = loggerFactory.CreateLogger<Program>();
+        }
+
+        [GlobalSetup(Target = nameof(ConsoleLogger))]
         public void GlobalSetupConsoleDerp()
         {
             loggerFactory =
@@ -38,10 +49,13 @@ namespace Benchmarks
         }
 
         [Benchmark]
-        public void Derp() => logger.LogInformation("Hello World!");
+        public void SqliteLoggerInMemory() => logger.LogInformation("Hello World!");
 
-        //[Benchmark (Baseline = true)]
-        public void ConsoleDerp() => logger.LogInformation("Hello World!");
+        [Benchmark]
+        public void SqliteLoggerFile() => logger.LogInformation("Hello World!");
+
+        [Benchmark (Baseline = true)]
+        public void ConsoleLogger() => logger.LogInformation("Hello World!");
 
         [GlobalCleanup]
         public void GlobalCleanup()
