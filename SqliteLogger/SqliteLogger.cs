@@ -1,6 +1,10 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
+using SQLitePCL;
 using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Text.Json;
 
 namespace SqliteLogger
 {
@@ -9,6 +13,8 @@ namespace SqliteLogger
         private readonly string _name;
         private readonly SqliteLoggerConfiguration _config;
         private readonly SqliteConnection connection;
+
+        internal IExternalScopeProvider ScopeProvider { get; set; }
 
         public SqliteLogger(string name, SqliteLoggerConfiguration config)
         {
@@ -23,7 +29,7 @@ namespace SqliteLogger
 
         public IDisposable BeginScope<TState>(TState state)
         {
-            return default;
+            return ScopeProvider?.Push(state) ?? default;
         }
 
         public bool IsEnabled(LogLevel logLevel)
@@ -38,6 +44,46 @@ namespace SqliteLogger
                 return;
             }
 
+            Dictionary<string, object?> scopes = new();
+            List<string> unnamedScopes = new();
+
+            var stateCollection = state as IReadOnlyCollection<KeyValuePair<string, object?>> 
+                ?? Array.Empty<KeyValuePair<string, object?>>();
+            foreach (var stateItem in stateCollection)
+            {
+                scopes.Add(stateItem.Key, stateItem.Value);
+            }
+
+            ScopeProvider.ForEachScope((scope, state) =>
+            {
+                if (scope is KeyValuePair<string, object?> kvp)
+                {
+                    scopes.Add(kvp.Key, kvp.Value);
+                }
+                else if (scope is IReadOnlyCollection<KeyValuePair<string, object?>> scopeList)
+                {
+                    foreach((string scopeKey, object? scopeValue) in scopeList)
+                    {
+                        scopes.Add(scopeKey, scopeValue);
+                    }
+                }
+                else
+                {
+                    string? scopeString = scope.ToString();
+                    if (scopeString is not null)
+                    {
+                        unnamedScopes.Add(scopeString);
+                    }
+                }
+            }, scopes);
+
+            if (unnamedScopes.Count > 0)
+            {
+                scopes.Add("Scope", unnamedScopes);
+            }
+
+            string serializedScopes = JsonSerializer.Serialize(scopes);
+
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText =
                 "INSERT INTO traces (" +
@@ -49,7 +95,7 @@ namespace SqliteLogger
             command.Parameters.AddWithValue("@timestamp", DateTimeOffset.UtcNow.ToString("O"));
             command.Parameters.AddWithValue("@name", _name);
             command.Parameters.AddWithValue("@level", logLevel.ToString());
-            command.Parameters.AddWithValue("@state", state.ToString());
+            command.Parameters.AddWithValue("@state", serializedScopes);
             command.Parameters.AddWithValue("@message", formatter.Invoke(state, exception));
 
             command.ExecuteNonQuery();

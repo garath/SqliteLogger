@@ -11,15 +11,21 @@ namespace Console
         {
             using ILoggerFactory loggerFactory =
                 LoggerFactory.Create(builder =>
+                {
+                    builder.AddSqliteLogger(options =>
+                    {
+                        options.ConnectionString = "Data Source=test.db";
+                    });
+
+                    //builder.AddApplicationInsights();
+
                     builder.AddSimpleConsole(options =>
                     {
                         options.IncludeScopes = true;
                         options.SingleLine = true;
                         options.TimestampFormat = "hh:mm:ss ";
-                    }).AddSqliteLogger(options =>
-                    {
-                        options.ConnectionString = "Data Source=test.db";
-                    }));
+                    });
+                });
 
 
             // Logging scopes
@@ -49,9 +55,9 @@ namespace Console
 
         public void DoExamples()
         {
-            KeyValuePair<string, int> smallScope = new("PropertyThing", 123);
-            List<KeyValuePair<string, string>> mediumScope = new() { new("medium1", "value1"), new("medium2", "value2") };
-            Dictionary<string, long> largeScope = new() { { "large1", 1000 }, { "large2", 2000 } };
+            KeyValuePair<string, object?> smallScope = new("PropertyThing", 123);
+            IReadOnlyList<KeyValuePair<string, object?>> mediumScope = new List<KeyValuePair<string, object?>>() { new("medium1", "value1"), new("medium2", "value2") };
+            Dictionary<string, object?> largeScope = new() { { "large1", 1000 }, { "large2", 2000 } };
 
             using IDisposable tinyLoggerScope = _logger.BeginScope("[scope is enabled]");
             _logger.LogInformation("Log with one scope");
@@ -64,6 +70,12 @@ namespace Console
 
             using IDisposable largeLoggerScope = _logger.BeginScope(largeScope);
             _logger.LogInformation("This is a structured {message}", "MESSAGE");
+
+            using IDisposable extraLargeLoggerScope = _logger.BeginScope("One more message");
+            _logger.LogInformation("Add one more string scope");
+
+            using IDisposable ultraLargeLoggerScope = _logger.BeginScope(1234);
+            _logger.LogInformation("Add an integer");
         }
 
 
@@ -88,19 +100,19 @@ namespace Console
 
             Object o = null;
 
-            // null case. Result:  Test NULL
+            _logger.LogDebug("null case. Result:  Test NULL");
             _logger.LogInformation("Test {value1}", o);
 
-            // datetime case. Result:  Test 25-3-2018 00:00:00 (locale TString)
+            _logger.LogDebug("datetime case. Result:  Test 25-3-2018 00:00:00 (locale TString)");
             _logger.LogInformation("Test {value1}", new DateTime(2018, 03, 25));
 
-            // list of strings. Result: Test "a", "b"
+            _logger.LogDebug("list of strings. Result: Test \"a\", \"b\"");
             _logger.LogInformation("Test {value1}", new List<string> { "a", "b" });
 
-            // array. Result: Test "a", "b"
+            _logger.LogDebug("// array. Result: Test \"a\", \"b\"");
             _logger.LogInformation("Test {value1}", new[] { "a", "b" });
 
-            // dict. Result:  Test "key1"=1, "key2"=2
+            _logger.LogDebug("dict. Result:  Test \"key1\"=1, \"key2\"=2");
             _logger.LogInformation("Test {value1}", new Dictionary<string, int> { { "key1", 1 }, { "key2", 2 } });
 
             var order = new

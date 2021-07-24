@@ -5,11 +5,12 @@ using System.Collections.Concurrent;
 
 namespace SqliteLogger
 {
-    public sealed class SqliteLoggerProvider : ILoggerProvider
+    public sealed class SqliteLoggerProvider : ILoggerProvider, ISupportExternalScope
     {
         private readonly IDisposable _onChangeToken;
-        private SqliteLoggerConfiguration _currentConfig;
         private readonly ConcurrentDictionary<string, SqliteLogger> _loggers = new();
+        private SqliteLoggerConfiguration _currentConfig;
+        private IExternalScopeProvider? _scopeProvider;
 
         public SqliteLoggerProvider(IOptionsMonitor<SqliteLoggerConfiguration> config)
         {
@@ -19,7 +20,11 @@ namespace SqliteLogger
 
         ILogger ILoggerProvider.CreateLogger(string categoryName)
         {
-            return _loggers.GetOrAdd(categoryName, name => new SqliteLogger(name, _currentConfig));
+            return _loggers.GetOrAdd(categoryName, name =>
+                new SqliteLogger(name, _currentConfig)
+                {
+                    ScopeProvider = _scopeProvider
+                });
         }
 
         void IDisposable.Dispose()
@@ -31,6 +36,16 @@ namespace SqliteLogger
 
             _loggers.Clear();
             _onChangeToken.Dispose();
+        }
+
+        public void SetScopeProvider(IExternalScopeProvider scopeProvider)
+        {
+            _scopeProvider = scopeProvider;
+
+            foreach (SqliteLogger logger in _loggers.Values)
+            {
+                logger.ScopeProvider = _scopeProvider;
+            }
         }
     }
 }
