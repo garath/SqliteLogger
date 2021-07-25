@@ -16,9 +16,6 @@ namespace Benchmarks
         private ILogger<Program> logger;
         private ILoggerFactory loggerFactory;
 
-        [Params("Data Source=:memory:", "Data Source=test.db")]
-        public string ConnectionString;
-
         public static IEnumerable<IReadOnlyCollection<KeyValuePair<string, object?>>> ScopeGenerator()
         {
             yield return new List<KeyValuePair<string, object?>>() { KeyValuePair.Create<string, object?>("scopeName", "scopeValue") };
@@ -33,7 +30,7 @@ namespace Benchmarks
                 LoggerFactory.Create(builder =>
                     builder.AddSqliteLogger(options =>
                     {
-                        options.ConnectionString = ConnectionString;
+                        options.FilePath = "test.db";
                     }));
 
             logger = loggerFactory.CreateLogger<Program>();

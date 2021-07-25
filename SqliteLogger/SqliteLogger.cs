@@ -2,7 +2,10 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SqliteLogger
 {
@@ -12,6 +15,9 @@ namespace SqliteLogger
         private readonly SqliteLoggerConfiguration _config;
         private readonly SqliteConnection connection;
 
+        private Task? _queueTask;
+        private CancellationTokenSource _stoppingTokenSource = new ();
+
         internal IExternalScopeProvider ScopeProvider { get; set; } = new NullScopeProvider();
 
         public SqliteLogger(string name, SqliteLoggerConfiguration config)
@@ -19,10 +25,34 @@ namespace SqliteLogger
             _name = name;
             _config = config;
 
-            connection = new SqliteConnection(_config.ConnectionString);
+            string fullFilePath = Path.GetFullPath(_config.FilePath);
+
+            SqliteConnectionStringBuilder sqliteConnectionStringBuilder = new()
+            {
+                DataSource = fullFilePath
+            };
+            connection = new SqliteConnection(sqliteConnectionStringBuilder.ToString());
             connection.Open();
 
             CreateTables();
+
+            if (_config.UseQueue)
+            {
+                connection.Close();
+
+                connection = new SqliteConnection("Data Source=file::memory:?cache=shared");
+                connection.Open();
+
+                SqliteCommand command = connection.CreateCommand();
+                command.CommandText = $"ATTACH DATABASE '{fullFilePath}' AS 'file'";
+                command.ExecuteNonQuery();
+
+                CreateTables();
+                CreateTables("file");
+
+                _queueTask = new LogQueueTask(connection)
+                    .RunAsync(_stoppingTokenSource.Token);
+            }
         }
 
         public IDisposable BeginScope<TState>(TState state)
@@ -84,7 +114,7 @@ namespace SqliteLogger
 
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText =
-                "INSERT INTO traces (" +
+                "INSERT INTO main.traces (" +
                         "timestamp, name, level, state, message" +
                     ") VALUES (" +
                         "@timestamp, @name, @level, @state, @message" +
@@ -99,10 +129,10 @@ namespace SqliteLogger
             command.ExecuteNonQuery();
         }
 
-        private void CreateTables()
+        private void CreateTables(string schema = "main")
         {
             string tracesQuery =
-                "CREATE TABLE IF NOT EXISTS traces (" +
+                $"CREATE TABLE IF NOT EXISTS {schema}.traces (" +
                     "timestamp TEXT NOT NULL, " +
                     "name TEXT NOT NULL, " +
                     "level TEXT NOT NULL, " +
@@ -117,6 +147,8 @@ namespace SqliteLogger
 
         public void Dispose()
         {
+            _stoppingTokenSource?.Cancel();
+            _queueTask?.Wait();
             connection?.Close();
         }
     }

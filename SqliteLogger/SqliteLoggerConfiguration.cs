@@ -2,6 +2,7 @@
 {
     public class SqliteLoggerConfiguration
     {
-        public string ConnectionString { get; set; }
+        public string FilePath { get; set; }
+        public bool UseQueue { get; set; } = false;
     }
 }

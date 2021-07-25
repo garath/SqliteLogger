@@ -14,7 +14,8 @@ namespace Console
                 {
                     builder.AddSqliteLogger(options =>
                     {
-                        options.ConnectionString = "Data Source=test.db";
+                        options.FilePath = "test.db";
+                        options.UseQueue = false;
                     });
 
                     //builder.AddApplicationInsights();

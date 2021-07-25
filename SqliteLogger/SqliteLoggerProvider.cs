@@ -23,7 +23,7 @@ namespace SqliteLogger
             return _loggers.GetOrAdd(categoryName, name =>
                 new SqliteLogger(name, _currentConfig)
                 {
-                    ScopeProvider = _scopeProvider
+                    ScopeProvider = _scopeProvider ?? new NullScopeProvider()
                 });
         }
 

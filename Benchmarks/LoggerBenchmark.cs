@@ -13,45 +13,22 @@ namespace Benchmarks
         private ILogger<Program> logger;
         private ILoggerFactory loggerFactory;
 
-        [GlobalSetup(Targets = new[] { nameof(SqliteLoggerFile), nameof(SqliteLoggerInMemory) })]
-        [Arguments("Data Source=test.db", "Data Source=:memory:")]
-        public void GlobalSetupSqliteLoggerFile(string connectionString)
+        [ParamsAllValues]
+        public bool UseQueue;
+
+        [GlobalSetup(Target = nameof(SqliteLoggerFile))]
+        public void GlobalSetupSqliteLoggerFile()
         {
             loggerFactory?.Dispose();
             loggerFactory = LoggerFactory.Create(builder =>
                 builder.AddSqliteLogger(options =>
                 {
-                    options.ConnectionString = connectionString;
+                    options.FilePath = "test.db";
+                    options.UseQueue = UseQueue;
                 }));
 
             logger = loggerFactory.CreateLogger<Program>();
         }
-
-        //[GlobalSetup(Target = nameof(SqliteLoggerInMemory))]
-        //public void GlobalSetupSqliteLoggerInMemory()
-        //{
-        //    loggerFactory =
-        //        LoggerFactory.Create(builder =>
-        //            builder.AddSqliteLogger(options =>
-        //            {
-        //                options.ConnectionString = "Data Source=:memory:";
-        //            }));
-
-        //    logger = loggerFactory.CreateLogger<Program>();
-        //}
-
-        //[GlobalSetup(Target = nameof(SqliteLoggerFile))]
-        //public void GlobalSetupSqliteLoggerFile()
-        //{
-        //    loggerFactory =
-        //        LoggerFactory.Create(builder =>
-        //            builder.AddSqliteLogger(options =>
-        //            {
-        //                options.ConnectionString = "Data Source=test.db";
-        //            }));
-
-        //    logger = loggerFactory.CreateLogger<Program>();
-        //}
 
         [GlobalSetup(Target = nameof(ConsoleLogger))]
         public void GlobalSetupConsoleLogger()
@@ -62,9 +39,6 @@ namespace Benchmarks
 
             logger = loggerFactory.CreateLogger<Program>();
         }
-
-        [Benchmark]
-        public void SqliteLoggerInMemory() => logger.LogInformation("Hello World!");
 
         [Benchmark]
         public void SqliteLoggerFile() => logger.LogInformation("Hello World!");
