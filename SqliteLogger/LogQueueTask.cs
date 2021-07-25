@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,18 +16,23 @@ namespace SqliteLogger
 
         public async Task RunAsync(CancellationToken stoppingToken)
         {
-            if (stoppingToken.IsCancellationRequested)
-                return;
+            Stopwatch drainDuration = new();
 
-            await Task.Delay(500, CancellationToken.None);
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                await Task.Delay(500, CancellationToken.None);
 
-            using SqliteCommand command = _source.CreateCommand();
-            command.CommandText =
-                "BEGIN IMMEDIATE TRANSACTION; " + 
-                "INSERT INTO file.traces SELECT * FROM main.traces; " +
-                "DELETE FROM main.traces; " +
-                "COMMIT;";
-            command.ExecuteNonQuery();
+                drainDuration.Restart();
+                using SqliteCommand command = _source.CreateCommand();
+                command.CommandText =
+                    "BEGIN IMMEDIATE TRANSACTION; " +
+                    "INSERT INTO file.traces SELECT * FROM main.traces; " +
+                    "DELETE FROM main.traces; " +
+                    "COMMIT;";
+                int rowsAffected = command.ExecuteNonQuery();
+
+                QueueEventSource.Source.QueueDrainEvent(rowsAffected, drainDuration.ElapsedMilliseconds);
+            }
         }
     }
 }
