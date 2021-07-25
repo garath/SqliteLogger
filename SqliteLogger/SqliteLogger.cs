@@ -1,9 +1,7 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
-using SQLitePCL;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Text.Json;
 
 namespace SqliteLogger
@@ -14,7 +12,7 @@ namespace SqliteLogger
         private readonly SqliteLoggerConfiguration _config;
         private readonly SqliteConnection connection;
 
-        internal IExternalScopeProvider ScopeProvider { get; set; }
+        internal IExternalScopeProvider ScopeProvider { get; set; } = new NullScopeProvider();
 
         public SqliteLogger(string name, SqliteLoggerConfiguration config)
         {
@@ -29,7 +27,7 @@ namespace SqliteLogger
 
         public IDisposable BeginScope<TState>(TState state)
         {
-            return ScopeProvider?.Push(state) ?? default;
+            return ScopeProvider.Push(state);
         }
 
         public bool IsEnabled(LogLevel logLevel)
