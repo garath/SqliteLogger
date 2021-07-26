@@ -7,8 +7,8 @@ namespace SqliteLogger
     {
         public static readonly QueueEventSource Source = new ();
 
-        private EventCounter _drainDurationCounter;
-        private EventCounter _drainRecordsCount;
+        private EventCounter? _drainDurationCounter;
+        private EventCounter? _drainRecordsCount;
 
         private QueueEventSource()
         {
