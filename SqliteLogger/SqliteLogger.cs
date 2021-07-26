@@ -1,26 +1,21 @@
-﻿using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SqliteLogger
 {
     public sealed class SqliteLogger : ILogger, IDisposable
     {
         private readonly string _name;
-        private readonly SqliteLoggerConfiguration _config;
-        private readonly SqliteConnection connection;
+        private readonly ILoggerConnection _connection;
 
         internal IExternalScopeProvider ScopeProvider { get; set; } = NullScopeProvider.Instance;
 
-        public SqliteLogger(string name, SqliteLoggerConfiguration config)
+        internal SqliteLogger(string name, ILoggerConnection connection)
         {
             _name = name;
-            _config = config;
+            _connection = connection;
         }
 
         public IDisposable BeginScope<TState>(TState state)
@@ -80,26 +75,12 @@ namespace SqliteLogger
 
             string serializedScopes = JsonSerializer.Serialize(scopes);
 
-            using SqliteCommand command = connection.CreateCommand();
-            command.CommandText =
-                "INSERT INTO main.traces (" +
-                        "timestamp, name, level, state, message" +
-                    ") VALUES (" +
-                        "@timestamp, @name, @level, @state, @message" +
-                    ");";
-
-            command.Parameters.AddWithValue("@timestamp", DateTimeOffset.UtcNow.ToString("O"));
-            command.Parameters.AddWithValue("@name", _name);
-            command.Parameters.AddWithValue("@level", logLevel.ToString());
-            command.Parameters.AddWithValue("@state", serializedScopes);
-            command.Parameters.AddWithValue("@message", formatter.Invoke(state, exception));
-
-            command.ExecuteNonQuery();
+            _connection.Log(DateTimeOffset.UtcNow, _name, logLevel.ToString(), serializedScopes, formatter.Invoke(state, exception));
         }
 
         public void Dispose()
         {
-            connection?.Close();
+            _connection?.Dispose();
         }
     }
 }
