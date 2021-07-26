@@ -54,18 +54,41 @@ namespace SqliteLogger
 
         private static void CreateTables(SqliteConnection connection, string schema = "main")
         {
-            string tracesQuery =
-                $"CREATE TABLE IF NOT EXISTS {schema}.traces (" +
-                    "timestamp TEXT NOT NULL, " +
-                    "name TEXT NOT NULL, " +
-                    "level TEXT NOT NULL, " +
-                    "state TEXT NULL, " +
-                    "message TEXT" +
-                ");";
+            using (SqliteCommand command = connection.CreateCommand())
+            {
+                command.CommandText =
+                    $"CREATE TABLE IF NOT EXISTS {schema}.traces (" +
+                        "timestamp TEXT NOT NULL, " +
+                        "name TEXT NOT NULL, " +
+                        "level TEXT NOT NULL, " +
+                        "state TEXT NULL, " +
+                        "exceptionid TEXT NULL, " +
+                        "message TEXT" +
+                    ");";
 
-            using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = tracesQuery;
-            command.ExecuteNonQuery();
+                command.ExecuteNonQuery();
+            }
+
+
+
+            using (SqliteCommand command = connection.CreateCommand())
+            {
+                command.CommandText =
+                    $"CREATE TABLE IF NOT EXISTS {schema}.exceptions (" +
+                        "timestamp TEXT NOT NULL, " + // denorming
+                        "sequence INTEGER NOT NULL, " + // denorming
+                        "id TEXT NOT NULL, " + // A primary key
+                        "data TEXT NULL, " + // JSON IDictionary
+                        "hresult INTEGER NULL, " +
+                        "innerexceptionid INTEGER NULL, " + // primary key of another exception, creating a hierarchy? 
+                        "message TEXT NOT NULL, " +
+                        "source TEXT NULL, " +
+                        "stacktrace TEXT NULL, " + // This can get big
+                        "targetsite TEXT NULL" +
+                    ");";
+
+                command.ExecuteNonQuery();
+            }
         }
 
         public SqliteLoggerConnection CreateConnection()
@@ -83,7 +106,8 @@ namespace SqliteLogger
 
     internal interface ILoggerConnection : IDisposable
     {
-        public void Log(DateTimeOffset timestamp, string name, string level, string state, string message);
+        public void Log(DateTimeOffset timestamp, string name, string level, string state, string? exceptionId, string message);
+        public void LogException(string timestamp, int sequence, string id, string? data, int? hresult, string? innerexceptionid, string message, string? source, string? stacktrace, string? targetsite);
     }
 
     internal sealed class SqliteLoggerConnection : ILoggerConnection
@@ -96,21 +120,46 @@ namespace SqliteLogger
             _connection.Open();
         }
 
-        public void Log(DateTimeOffset timestamp, string name, string level, string state, string message)
+        public void Log(DateTimeOffset timestamp, string name, string level, string state, string? exceptionId, string message)
         {
             using SqliteCommand command = _connection.CreateCommand();
             command.CommandText =
                 "INSERT INTO main.traces (" +
-                        "timestamp, name, level, state, message" +
+                        "timestamp, name, level, state, exceptionId, message" +
                     ") VALUES (" +
-                        "@timestamp, @name, @level, @state, @message" +
+                        "@timestamp, @name, @level, @state, @exceptionId, @message" +
                     ");";
 
             command.Parameters.AddWithValue("@timestamp", timestamp.ToString("O"));
             command.Parameters.AddWithValue("@name", name);
             command.Parameters.AddWithValue("@level", level);
             command.Parameters.AddWithValue("@state", state);
+            command.Parameters.AddWithValue("@exceptionId", exceptionId ?? DBNull.Value.ToString());
             command.Parameters.AddWithValue("@message", message);
+
+            command.ExecuteNonQuery();
+        }
+
+        public void LogException(string timestamp, int sequence, string id, string? data, int? hresult, string? innerexceptionid, string message, string? source, string? stacktrace, string? targetsite)
+        {
+            using SqliteCommand command = _connection.CreateCommand();
+            command.CommandText =
+                "INSERT INTO main.exceptions (" +
+                    "timestamp, sequence, id, data, hresult, innerexceptionid, message, source , stacktrace, targetsite" +
+                ") VALUES (" +
+                    "@timestamp, @sequence, @id, @data, @hresult, @innerexceptionid, @message, @source , @stacktrace, @targetsite" +
+                ");";
+
+            command.Parameters.AddWithValue("@timestamp", timestamp);
+            command.Parameters.AddWithValue("@sequence", sequence);
+            command.Parameters.AddWithValue("@id", id);
+            command.Parameters.AddWithValue("@data", data ?? DBNull.Value.ToString());
+            command.Parameters.AddWithValue("@hresult", hresult == null ? DBNull.Value : hresult);
+            command.Parameters.AddWithValue("@innerexceptionid", innerexceptionid == null ? DBNull.Value : innerexceptionid);
+            command.Parameters.AddWithValue("@message", message);
+            command.Parameters.AddWithValue("@source", source == null ? DBNull.Value : source);
+            command.Parameters.AddWithValue("@stacktrace", stacktrace == null ? DBNull.Value : stacktrace);
+            command.Parameters.AddWithValue("@targetsite", targetsite == null ? DBNull.Value : targetsite);
 
             command.ExecuteNonQuery();
         }

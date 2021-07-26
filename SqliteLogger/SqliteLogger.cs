@@ -35,6 +35,7 @@ namespace SqliteLogger
                 return;
             }
 
+            DateTimeOffset timestamp = DateTimeOffset.UtcNow;
             Dictionary<string, object?> scopes = new();
             List<string> unnamedScopes = new();
 
@@ -75,7 +76,51 @@ namespace SqliteLogger
 
             string serializedScopes = JsonSerializer.Serialize(scopes);
 
-            _connection.Log(DateTimeOffset.UtcNow, _name, logLevel.ToString(), serializedScopes, formatter.Invoke(state, exception));
+            List<(Guid Id, Exception Exception)> exceptionTree = new ();
+            Exception? nextException = exception;
+            while(nextException != null)
+            {
+                Guid exceptionId = Guid.NewGuid();
+                exceptionTree.Add((exceptionId, exception));
+                nextException = nextException.InnerException;
+            } 
+
+            _connection.Log(
+                timestamp: timestamp, 
+                name: _name, 
+                level: logLevel.ToString(), 
+                state: serializedScopes, 
+                exceptionId: exceptionTree.Count == 0 ? null : exceptionTree[0].Id.ToString(),
+                message: formatter.Invoke(state, exception));
+
+            for(int i = 0; i < exceptionTree.Count; i++)
+            {
+                (Guid Id, Exception Exception) = exceptionTree[i];
+
+                string? serializedData = null;
+                if (Exception.Data is not null)
+                {
+                    serializedData = JsonSerializer.Serialize(Exception.Data);
+                }
+
+                string? nextId = null;
+                if (i < exceptionTree.Count - 1)
+                {
+                    nextId = exceptionTree[i + 1].Id.ToString(); ;
+                }
+
+                _connection.LogException(
+                    timestamp: timestamp.ToString("O"),
+                    sequence: i,
+                    id: Id.ToString(),
+                    data: serializedData,
+                    hresult: Exception.HResult,
+                    innerexceptionid: nextId,
+                    message: Exception.Message,
+                    source: Exception.Source,
+                    stacktrace: Exception.StackTrace,
+                    targetsite: Exception.TargetSite?.Name);
+            }
         }
 
         public void Dispose()

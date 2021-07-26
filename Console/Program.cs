@@ -15,7 +15,7 @@ namespace Console
                     builder.AddSqliteLogger(options =>
                     {
                         options.FilePath = "test.db";
-                        options.UseQueue = false;
+                        options.UseQueue = true;
                     });
 
                     //builder.AddApplicationInsights();
@@ -36,6 +36,10 @@ namespace Console
             // Structured Logging
             StructuredLoggingExamples structuredLoggingExamples = new(loggerFactory.CreateLogger<StructuredLoggingExamples>());
             structuredLoggingExamples.DoExamples();
+
+            // Exceptions
+            ExceptionsLoggingExamples exceptionsLoggingExamples = new(loggerFactory.CreateLogger<ExceptionsLoggingExamples>());
+            exceptionsLoggingExamples.DoExamples();
         }
     }
 
@@ -139,5 +143,36 @@ namespace Console
         {
             Processing
         };
+    }
+
+    class ExceptionsLoggingExamples
+    {
+        readonly ILogger<ExceptionsLoggingExamples> _logger;
+
+        public ExceptionsLoggingExamples(ILogger<ExceptionsLoggingExamples> logger)
+        {
+            _logger = logger;
+        }
+
+        public void DoExamples()
+        {
+            _logger.LogError(
+                new ArgumentNullException("nullParamName", "Oh no a null exception"),
+                "I think someone just shot a torpedo at us");
+
+            _logger.LogWarning(
+                new ArgumentNullException("Oh no a null exception", new InvalidOperationException("This is an invalid operation exception")),
+                "I think someone just shot a torpedo at us"
+            );
+
+            try
+            {
+                int i = Array.Empty<int>()[1];
+            }
+            catch (IndexOutOfRangeException ex)
+            {
+                _logger.LogError(ex, "I caused an {exception}", "IndexOutOfRangeException");
+            }
+        }
     }
 }
