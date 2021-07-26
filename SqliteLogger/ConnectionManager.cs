@@ -1,23 +1,18 @@
 ﻿using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Data.Common;
 using System.IO;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace SqliteLogger
 {
     internal sealed class ConnectionManager : IDisposable
     {
         private readonly string _connectionString;
-        private Task? _queueTask;
-        private CancellationTokenSource _stoppingTokenSource = new();
+        private readonly CancellationTokenSource _stoppingTokenSource = new();
+
+        private readonly SqliteConnection? _queueConnection;
+        private readonly Task? _queueTask;
 
         public ConnectionManager(SqliteLoggerConfiguration _config)
         {
@@ -51,7 +46,8 @@ namespace SqliteLogger
                 CreateTables(connection);
                 CreateTables(connection, "file");
 
-                _queueTask = new LogQueueTask(connection)
+                _queueConnection = connection;
+                _queueTask = new LogQueueTask(_queueConnection)
                     .RunAsync(_stoppingTokenSource.Token);
             }
         }
@@ -81,6 +77,7 @@ namespace SqliteLogger
         {
             _stoppingTokenSource?.Cancel();
             _queueTask?.Wait();
+            _queueConnection?.Close();
         }
     }
 
@@ -96,6 +93,7 @@ namespace SqliteLogger
         public SqliteLoggerConnection(SqliteConnection connection)
         {
             _connection = connection;
+            _connection.Open();
         }
 
         public void Log(DateTimeOffset timestamp, string name, string level, string state, string message)

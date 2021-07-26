@@ -16,7 +16,7 @@ namespace Benchmarks
         [ParamsAllValues]
         public bool UseQueue;
 
-        [GlobalSetup(Target = nameof(SqliteLoggerFile))]
+        [GlobalSetup(Target = nameof(SqliteLogger))]
         public void GlobalSetupSqliteLoggerFile()
         {
             loggerFactory?.Dispose();
@@ -41,7 +41,7 @@ namespace Benchmarks
         }
 
         [Benchmark]
-        public void SqliteLoggerFile() => logger.LogInformation("Hello World!");
+        public void SqliteLogger() => logger.LogInformation("Hello World!");
 
         [Benchmark (Baseline = true)]
         public void ConsoleLogger() => logger.LogInformation("Hello World!");
