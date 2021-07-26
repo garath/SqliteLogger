@@ -7,15 +7,13 @@ namespace SqliteLogger
 {
     public sealed class SqliteLoggerProvider : ILoggerProvider, ISupportExternalScope
     {
-        private readonly IDisposable _onChangeToken;
         private readonly ConcurrentDictionary<string, SqliteLogger> _loggers = new();
-        private SqliteLoggerConfiguration _currentConfig;
+        private readonly SqliteLoggerConfiguration _currentConfig;
         private IExternalScopeProvider? _scopeProvider;
 
-        public SqliteLoggerProvider(IOptionsMonitor<SqliteLoggerConfiguration> config)
+        public SqliteLoggerProvider(IOptions<SqliteLoggerConfiguration> config)
         {
-            _currentConfig = config.CurrentValue;
-            _onChangeToken = config.OnChange(updatedConfig => _currentConfig = updatedConfig);
+            _currentConfig = config.Value;
         }
 
         ILogger ILoggerProvider.CreateLogger(string categoryName)
@@ -23,7 +21,7 @@ namespace SqliteLogger
             return _loggers.GetOrAdd(categoryName, name =>
                 new SqliteLogger(name, _currentConfig)
                 {
-                    ScopeProvider = _scopeProvider ?? new NullScopeProvider()
+                    ScopeProvider = _scopeProvider ?? NullScopeProvider.Instance
                 });
         }
 
@@ -35,7 +33,6 @@ namespace SqliteLogger
             }
 
             _loggers.Clear();
-            _onChangeToken.Dispose();
         }
 
         public void SetScopeProvider(IExternalScopeProvider scopeProvider)
