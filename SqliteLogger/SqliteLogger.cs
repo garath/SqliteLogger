@@ -114,12 +114,12 @@ namespace SqliteLogger
                     sequence: i,
                     id: Id.ToString(),
                     data: serializedData,
-                    hresult: Exception.HResult,
-                    innerexceptionid: nextId,
+                    hResult: Exception.HResult,
+                    innerExceptionId: nextId,
                     message: Exception.Message,
                     source: Exception.Source,
-                    stacktrace: Exception.StackTrace,
-                    targetsite: Exception.TargetSite?.Name);
+                    stackTrace: Exception.StackTrace,
+                    targetSite: Exception.TargetSite?.Name);
             }
         }
 
