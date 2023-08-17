@@ -18,7 +18,7 @@ namespace SqliteLogger
             using SqliteCommand command = _connection.CreateCommand();
             command.CommandText =
                 "INSERT INTO main.traces (" +
-                        "timestamp, name, level, state, exceptionId, message" +
+                        "timestamp, name, level, state, exception_id, message" +
                     ") VALUES (" +
                         "@timestamp, @name, @level, @state, @exceptionId, @message" +
                     ");";
@@ -38,9 +38,9 @@ namespace SqliteLogger
             using SqliteCommand command = _connection.CreateCommand();
             command.CommandText =
                 "INSERT INTO main.exceptions (" +
-                    "timestamp, sequence, id, data, hresult, innerexceptionid, message, source , stacktrace, targetsite" +
+                    "timestamp, sequence, id, data, hresult, inner_exception_id, message, source , stacktrace, targetsite" +
                 ") VALUES (" +
-                    "@timestamp, @sequence, @id, @data, @hresult, @innerexceptionid, @message, @source , @stacktrace, @targetsite" +
+                    "@timestamp, @sequence, @id, @data, @hresult, @innerExceptionId, @message, @source , @stacktrace, @targetsite" +
                 ");";
 
             command.Parameters.AddWithValue("@timestamp", timestamp);
@@ -48,7 +48,7 @@ namespace SqliteLogger
             command.Parameters.AddWithValue("@id", id);
             command.Parameters.AddWithValue("@data", data ?? DBNull.Value.ToString());
             command.Parameters.AddWithValue("@hresult", hresult == null ? DBNull.Value : hresult);
-            command.Parameters.AddWithValue("@innerexceptionid", innerexceptionid == null ? DBNull.Value : innerexceptionid);
+            command.Parameters.AddWithValue("@innerExceptionId", innerexceptionid == null ? DBNull.Value : innerexceptionid);
             command.Parameters.AddWithValue("@message", message);
             command.Parameters.AddWithValue("@source", source == null ? DBNull.Value : source);
             command.Parameters.AddWithValue("@stacktrace", stacktrace == null ? DBNull.Value : stacktrace);

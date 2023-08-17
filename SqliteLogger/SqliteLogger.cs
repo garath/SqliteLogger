@@ -83,7 +83,8 @@ namespace SqliteLogger
                 Guid exceptionId = Guid.NewGuid();
                 exceptionTree.Add((exceptionId, exception));
                 nextException = nextException.InnerException;
-            } 
+            }
+            exceptionTree.Reverse();
 
             _connection.Log(
                 timestamp: timestamp, 
@@ -103,10 +104,10 @@ namespace SqliteLogger
                     serializedData = JsonSerializer.Serialize(Exception.Data);
                 }
 
-                string? nextId = null;
-                if (i < exceptionTree.Count - 1)
+                string? lastId = null;
+                if (i > 0)
                 {
-                    nextId = exceptionTree[i + 1].Id.ToString(); ;
+                    lastId = exceptionTree[i - 1].Id.ToString();
                 }
 
                 _connection.LogException(
@@ -115,7 +116,7 @@ namespace SqliteLogger
                     id: Id.ToString(),
                     data: serializedData,
                     hResult: Exception.HResult,
-                    innerExceptionId: nextId,
+                    innerExceptionId: lastId,
                     message: Exception.Message,
                     source: Exception.Source,
                     stackTrace: Exception.StackTrace,

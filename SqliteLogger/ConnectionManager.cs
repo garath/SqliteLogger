@@ -61,15 +61,13 @@ namespace SqliteLogger
                         "timestamp TEXT NOT NULL, " +
                         "name TEXT NOT NULL, " +
                         "level TEXT NOT NULL, " +
-                        "state TEXT NULL, " +
-                        "exceptionid TEXT NULL, " +
+                        "state TEXT, " +
+                        "exception_id TEXT , " +
                         "message TEXT" +
                     ");";
 
                 command.ExecuteNonQuery();
             }
-
-
 
             using (SqliteCommand command = connection.CreateCommand())
             {
@@ -77,14 +75,14 @@ namespace SqliteLogger
                     $"CREATE TABLE IF NOT EXISTS {schema}.exceptions (" +
                         "timestamp TEXT NOT NULL, " + // denorming
                         "sequence INTEGER NOT NULL, " + // denorming
-                        "id TEXT NOT NULL, " + // A primary key
-                        "data TEXT NULL, " + // JSON IDictionary
-                        "hresult INTEGER NULL, " +
-                        "innerexceptionid INTEGER NULL, " + // primary key of another exception, creating a hierarchy? 
+                        "id TEXT PRIMARY KEY, " + // A primary key
+                        "data TEXT, " + // JSON IDictionary
+                        "hresult INTEGER, " +
+                        "inner_exception_id TEXT REFERENCES exceptions(id) ON DELETE CASCADE ON UPDATE CASCADE, " + // primary key of another exception, creating a hierarchy 
                         "message TEXT NOT NULL, " +
-                        "source TEXT NULL, " +
-                        "stacktrace TEXT NULL, " + // This can get big
-                        "targetsite TEXT NULL" +
+                        "source TEXT, " +
+                        "stacktrace TEXT, " + // This can get big
+                        "targetsite TEXT" +
                     ");";
 
                 command.ExecuteNonQuery();
