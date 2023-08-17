@@ -39,9 +39,11 @@ namespace SqliteLogger
                 connection = new SqliteConnection(_connectionString);
                 connection.Open();
 
-                SqliteCommand command = connection.CreateCommand();
-                command.CommandText = $"ATTACH DATABASE '{fullFilePath}' AS 'file'";
-                command.ExecuteNonQuery();
+                using (SqliteCommand command = connection.CreateCommand())
+                {
+                    command.CommandText = $"ATTACH DATABASE '{fullFilePath}' AS 'file'";
+                    command.ExecuteNonQuery();
+                }
 
                 CreateTables(connection);
                 CreateTables(connection, "file");
@@ -67,10 +69,7 @@ namespace SqliteLogger
                     ");";
 
                 command.ExecuteNonQuery();
-            }
 
-            using (SqliteCommand command = connection.CreateCommand())
-            {
                 command.CommandText =
                     $"CREATE TABLE IF NOT EXISTS {schema}.exceptions (" +
                         "timestamp TEXT NOT NULL, " + // denorming
