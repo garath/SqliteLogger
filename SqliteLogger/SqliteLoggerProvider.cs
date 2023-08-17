@@ -5,16 +5,18 @@ using System.Collections.Concurrent;
 
 namespace SqliteLogger
 {
+    [ProviderAlias("Sqlite")]
     public sealed class SqliteLoggerProvider : ILoggerProvider, ISupportExternalScope
     {
         private readonly ConcurrentDictionary<string, SqliteLogger> _loggers = new();
-        private readonly SqliteLoggerConfiguration _config;
         private readonly ConnectionManager _connectionManager;
+        private SqliteLoggerConfiguration _config;
         private IExternalScopeProvider? _scopeProvider;        
 
-        public SqliteLoggerProvider(IOptions<SqliteLoggerConfiguration> config)
+        public SqliteLoggerProvider(IOptionsMonitor<SqliteLoggerConfiguration> config)
         {
-            _config = config.Value;
+            _config = config.CurrentValue;
+            config.OnChange(updatedConfig => _config = updatedConfig);
             _connectionManager = new ConnectionManager(_config);
         }
 
