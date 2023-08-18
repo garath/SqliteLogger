@@ -26,15 +26,14 @@ namespace SqliteLogger
             _connectionString = sqliteConnectionStringBuilder.ToString();
 
             // Ensure the file is created
-            connection = new SqliteConnection(_connectionString);
-            connection.Open();
-
-            CreateTables(connection);
+            using (connection = new SqliteConnection(_connectionString))
+            {
+                connection.Open();
+                CreateTables(connection);
+            }
 
             if (_config.UseQueue)
             {
-                connection.Close();
-
                 _connectionString = "Data Source=file::memory:?cache=shared";
                 connection = new SqliteConnection(_connectionString);
                 connection.Open();
@@ -56,35 +55,39 @@ namespace SqliteLogger
 
         private static void CreateTables(SqliteConnection connection, string schema = "main")
         {
-            using (SqliteCommand command = connection.CreateCommand())
+            using (var transaction = connection.BeginTransaction())
             {
-                command.CommandText =
-                    $"CREATE TABLE IF NOT EXISTS {schema}.traces (" +
-                        "timestamp TEXT NOT NULL, " +
-                        "name TEXT NOT NULL, " +
-                        "level TEXT NOT NULL, " +
-                        "state TEXT, " +
-                        "exception_id TEXT , " +
-                        "message TEXT" +
-                    ");";
+                using (SqliteCommand command = connection.CreateCommand())
+                {
+                    command.Transaction = transaction;
+                    command.CommandText =
+                        $"CREATE TABLE IF NOT EXISTS {schema}.traces (" +
+                            "timestamp TEXT NOT NULL, " +
+                            "name TEXT NOT NULL, " +
+                            "level TEXT NOT NULL, " +
+                            "state TEXT, " +
+                            "exception_id TEXT , " +
+                            "message TEXT" +
+                        ");";
 
-                command.ExecuteNonQuery();
+                    command.ExecuteNonQuery();
 
-                command.CommandText =
-                    $"CREATE TABLE IF NOT EXISTS {schema}.exceptions (" +
-                        "timestamp TEXT NOT NULL, " + // denorming
-                        "sequence INTEGER NOT NULL, " + // denorming
-                        "id TEXT PRIMARY KEY, " + // A primary key
-                        "data TEXT, " + // JSON IDictionary
-                        "hresult INTEGER, " +
-                        "inner_exception_id TEXT REFERENCES exceptions(id) ON DELETE CASCADE ON UPDATE CASCADE, " + // primary key of another exception, creating a hierarchy 
-                        "message TEXT NOT NULL, " +
-                        "source TEXT, " +
-                        "stacktrace TEXT, " + // This can get big
-                        "targetsite TEXT" +
-                    ");";
+                    command.CommandText =
+                        $"CREATE TABLE IF NOT EXISTS {schema}.exceptions (" +
+                            "timestamp TEXT NOT NULL, " + // denorming
+                            "sequence INTEGER NOT NULL, " + // denorming
+                            "id TEXT PRIMARY KEY, " + // A primary key
+                            "data TEXT, " + // JSON IDictionary
+                            "hresult INTEGER, " +
+                            "inner_exception_id TEXT REFERENCES exceptions(id) ON DELETE CASCADE ON UPDATE CASCADE, " + // primary key of another exception, creating a hierarchy 
+                            "message TEXT NOT NULL, " +
+                            "source TEXT, " +
+                            "stacktrace TEXT, " + // This can get big
+                            "targetsite TEXT" +
+                        ");";
 
-                command.ExecuteNonQuery();
+                    command.ExecuteNonQuery();
+                }
             }
         }
 
