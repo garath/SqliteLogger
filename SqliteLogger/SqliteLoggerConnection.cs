@@ -6,6 +6,7 @@ namespace SqliteLogger
     internal sealed class SqliteLoggerConnection : ILoggerConnection
     {
         private readonly SqliteConnection _connection;
+        private SqliteCommandsScope? _scope;
 
         public SqliteLoggerConnection(SqliteConnection connection)
         {
@@ -13,9 +14,21 @@ namespace SqliteLogger
             _connection.Open();
         }
 
+        public IDisposable BeginScope()
+        {
+            if (_scope == null)
+            {
+                 var transaction = _connection.BeginTransaction();
+                return new SqliteCommandsScope(transaction);
+            }
+            else
+                return _scope;
+        }
+
         public void Log(DateTimeOffset timestamp, string name, string level, string state, string? exceptionId, string message)
         {
             using SqliteCommand command = _connection.CreateCommand();
+            command.AattachToScope(_scope);
             command.CommandText =
                 "INSERT INTO main.traces (" +
                         "timestamp, name, level, state, exception_id, message" +
@@ -36,6 +49,7 @@ namespace SqliteLogger
         public void LogException(string timestamp, int sequence, string id, string? data, int? hresult, string? innerexceptionid, string message, string? source, string? stacktrace, string? targetsite)
         {
             using SqliteCommand command = _connection.CreateCommand();
+            command.AattachToScope(_scope);
             command.CommandText =
                 "INSERT INTO main.exceptions (" +
                     "timestamp, sequence, id, data, hresult, inner_exception_id, message, source , stacktrace, targetsite" +

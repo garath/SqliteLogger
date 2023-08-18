@@ -39,7 +39,7 @@ namespace SqliteLogger
             Dictionary<string, object?> scopes = new();
             List<string> unnamedScopes = new();
 
-            var stateCollection = state as IReadOnlyCollection<KeyValuePair<string, object?>> 
+            var stateCollection = state as IReadOnlyCollection<KeyValuePair<string, object?>>
                 ?? Array.Empty<KeyValuePair<string, object?>>();
             foreach (var stateItem in stateCollection)
             {
@@ -54,7 +54,7 @@ namespace SqliteLogger
                 }
                 else if (scope is IReadOnlyCollection<KeyValuePair<string, object?>> scopeList)
                 {
-                    foreach((string scopeKey, object? scopeValue) in scopeList)
+                    foreach ((string scopeKey, object? scopeValue) in scopeList)
                     {
                         scopes.Add(scopeKey, scopeValue);
                     }
@@ -76,9 +76,9 @@ namespace SqliteLogger
 
             string serializedScopes = JsonSerializer.Serialize(scopes);
 
-            List<(Guid Id, Exception Exception)> exceptionTree = new ();
+            List<(Guid Id, Exception Exception)> exceptionTree = new();
             Exception? nextException = exception;
-            while(nextException != null)
+            while (nextException != null)
             {
                 Guid exceptionId = Guid.NewGuid();
                 exceptionTree.Add((exceptionId, exception));
@@ -86,15 +86,17 @@ namespace SqliteLogger
             }
             exceptionTree.Reverse();
 
+            using var connectionScope = _connection.BeginScope();
+
             _connection.Log(
-                timestamp: timestamp, 
-                name: _name, 
-                level: logLevel.ToString(), 
-                state: serializedScopes, 
+                timestamp: timestamp,
+                name: _name,
+                level: logLevel.ToString(),
+                state: serializedScopes,
                 exceptionId: exceptionTree.Count == 0 ? null : exceptionTree[0].Id.ToString(),
                 message: formatter.Invoke(state, exception));
 
-            for(int i = 0; i < exceptionTree.Count; i++)
+            for (int i = 0; i < exceptionTree.Count; i++)
             {
                 (Guid Id, Exception Exception) = exceptionTree[i];
 

@@ -88,6 +88,7 @@ namespace SqliteLogger
 
                     command.ExecuteNonQuery();
                 }
+                transaction.Commit();
             }
         }
 
