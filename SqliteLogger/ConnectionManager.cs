@@ -48,8 +48,11 @@ namespace SqliteLogger
                 CreateTables(connection, "file");
 
                 _queueConnection = connection;
-                _queueTask = new LogQueueTask(_queueConnection)
-                    .RunAsync(_stoppingTokenSource.Token);
+                var task = new LogQueueTask(_queueConnection);
+                TimeSpan minDelay = TimeSpan.FromMilliseconds(1);
+                task.Delay = _config.DelayBetweenQueueDrain < minDelay ? minDelay : _config.DelayBetweenQueueDrain;
+
+                _queueTask = task.RunAsync(_stoppingTokenSource.Token);
             }
         }
 

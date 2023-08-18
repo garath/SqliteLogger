@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,11 +14,13 @@ namespace SqliteLogger
             _source = source;
         }
 
+        public TimeSpan Delay { get; set; }
+
         public async Task RunAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(500, CancellationToken.None);
+                await Task.Delay(Delay, CancellationToken.None);
 
                 SqliteCommand command = _source.CreateCommand();
                 command.CommandText =
