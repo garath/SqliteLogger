@@ -29,7 +29,7 @@ namespace SqliteLogger
             using (connection = new SqliteConnection(_connectionString))
             {
                 connection.Open();
-                CreateTables(connection);
+                CreateTables(connection, "main", true);
             }
 
             if (_config.UseQueue)
@@ -45,7 +45,7 @@ namespace SqliteLogger
                 }
 
                 CreateTables(connection);
-                CreateTables(connection, "file");
+                CreateTables(connection, "file", true);
 
                 _queueConnection = connection;
                 var task = new LogQueueTask(_queueConnection);
@@ -56,7 +56,7 @@ namespace SqliteLogger
             }
         }
 
-        private static void CreateTables(SqliteConnection connection, string schema = "main")
+        private static void CreateTables(SqliteConnection connection, string schema = "main", bool createIndexes = false)
         {
             using (var transaction = connection.BeginTransaction())
             {
@@ -90,6 +90,21 @@ namespace SqliteLogger
                         ");";
 
                     command.ExecuteNonQuery();
+
+                    if (createIndexes)
+                    {
+                        command.CommandText =
+                            $"CREATE INDEX IF NOT EXISTS {schema}.idx_traces_timespamp_desc ON traces (" +
+                                "timestamp DESC" +
+                             ")";
+                        command.ExecuteNonQuery();
+
+                        command.CommandText =
+                            $"CREATE INDEX IF NOT EXISTS {schema}.idx_exceptions_timespamp_desc ON exceptions (" +
+                                "timestamp DESC" +
+                             ")";
+                        command.ExecuteNonQuery();
+                    }
                 }
                 transaction.Commit();
             }
