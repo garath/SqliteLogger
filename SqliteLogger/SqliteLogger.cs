@@ -84,7 +84,6 @@ namespace SqliteLogger
                 exceptionTree.Add((exceptionId, exception));
                 nextException = nextException.InnerException;
             }
-            exceptionTree.Reverse();
 
             using var connectionScope = _connection.BeginScope();
 
@@ -96,7 +95,8 @@ namespace SqliteLogger
                 exceptionId: exceptionTree.Count == 0 ? null : exceptionTree[0].Id.ToString(),
                 message: formatter.Invoke(state, exception));
 
-            for (int i = 0; i < exceptionTree.Count; i++)
+            bool firstException = true;
+            for (int i = exceptionTree.Count - 1; i >= 0 ; i--)
             {
                 (Guid Id, Exception Exception) = exceptionTree[i];
 
@@ -106,10 +106,10 @@ namespace SqliteLogger
                     serializedData = JsonSerializer.Serialize(Exception.Data);
                 }
 
-                string? lastId = null;
-                if (i > 0)
+                string? innerExceptionId = null;
+                if (!firstException)
                 {
-                    lastId = exceptionTree[i - 1].Id.ToString();
+                    innerExceptionId = exceptionTree[i + 1].Id.ToString();
                 }
 
                 _connection.LogException(
@@ -118,11 +118,13 @@ namespace SqliteLogger
                     id: Id.ToString(),
                     data: serializedData,
                     hResult: Exception.HResult,
-                    innerExceptionId: lastId,
+                    innerExceptionId: innerExceptionId,
                     message: Exception.Message,
                     source: Exception.Source,
                     stackTrace: Exception.StackTrace,
                     targetSite: Exception.TargetSite?.Name);
+
+                firstException = false;
             }
         }
 
