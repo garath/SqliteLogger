@@ -13,10 +13,9 @@ namespace SqliteLogger
         private SqliteLoggerConfiguration _config;
         private IExternalScopeProvider? _scopeProvider;        
 
-        public SqliteLoggerProvider(IOptionsMonitor<SqliteLoggerConfiguration> config)
+        public SqliteLoggerProvider(IOptions<SqliteLoggerConfiguration> config)
         {
-            _config = config.CurrentValue;
-            config.OnChange(updatedConfig => _config = updatedConfig);
+            _config = config.Value;
             _connectionManager = new ConnectionManager(_config);
         }
 
