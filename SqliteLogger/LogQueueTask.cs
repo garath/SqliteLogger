@@ -20,7 +20,7 @@ namespace SqliteLogger
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(Delay, CancellationToken.None);
+                await Task.Delay(Delay, CancellationToken.None).ConfigureAwait(false);
 
                 SqliteCommand command = _source.CreateCommand();
                 command.CommandText =
