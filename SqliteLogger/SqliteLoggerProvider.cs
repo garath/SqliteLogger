@@ -5,11 +5,12 @@ using System.Collections.Concurrent;
 
 namespace SqliteLogger
 {
+    [ProviderAlias("Sqlite")]
     public sealed class SqliteLoggerProvider : ILoggerProvider, ISupportExternalScope
     {
         private readonly ConcurrentDictionary<string, SqliteLogger> _loggers = new();
-        private readonly SqliteLoggerConfiguration _config;
         private readonly ConnectionManager _connectionManager;
+        private SqliteLoggerConfiguration _config;
         private IExternalScopeProvider? _scopeProvider;        
 
         public SqliteLoggerProvider(IOptions<SqliteLoggerConfiguration> config)

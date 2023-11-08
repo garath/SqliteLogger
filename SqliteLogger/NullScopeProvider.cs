@@ -19,19 +19,4 @@ namespace SqliteLogger
 
         public IDisposable Push(object state) => NullDisposable.Instance;
     }
-
-    internal class NullDisposable : IDisposable
-    {
-        public static readonly IDisposable Instance = new NullDisposable();
-
-        private NullDisposable()
-        {
-
-        }
-
-        public void Dispose()
-        {
-            return;
-        }
-    }
 }

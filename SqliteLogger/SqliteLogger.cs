@@ -39,7 +39,7 @@ namespace SqliteLogger
             Dictionary<string, object?> scopes = new();
             List<string> unnamedScopes = new();
 
-            var stateCollection = state as IReadOnlyCollection<KeyValuePair<string, object?>> 
+            var stateCollection = state as IReadOnlyCollection<KeyValuePair<string, object?>>
                 ?? Array.Empty<KeyValuePair<string, object?>>();
             foreach (var stateItem in stateCollection)
             {
@@ -54,7 +54,7 @@ namespace SqliteLogger
                 }
                 else if (scope is IReadOnlyCollection<KeyValuePair<string, object?>> scopeList)
                 {
-                    foreach((string scopeKey, object? scopeValue) in scopeList)
+                    foreach ((string scopeKey, object? scopeValue) in scopeList)
                     {
                         scopes.Add(scopeKey, scopeValue);
                     }
@@ -76,24 +76,27 @@ namespace SqliteLogger
 
             string serializedScopes = JsonSerializer.Serialize(scopes);
 
-            List<(Guid Id, Exception Exception)> exceptionTree = new ();
+            List<(Guid Id, Exception Exception)> exceptionTree = new();
             Exception? nextException = exception;
-            while(nextException != null)
+            while (nextException != null)
             {
                 Guid exceptionId = Guid.NewGuid();
                 exceptionTree.Add((exceptionId, exception));
                 nextException = nextException.InnerException;
-            } 
+            }
+
+            using var connectionScope = _connection.BeginScope();
 
             _connection.Log(
-                timestamp: timestamp, 
-                name: _name, 
-                level: logLevel.ToString(), 
-                state: serializedScopes, 
+                timestamp: timestamp,
+                name: _name,
+                level: logLevel.ToString(),
+                state: serializedScopes,
                 exceptionId: exceptionTree.Count == 0 ? null : exceptionTree[0].Id.ToString(),
                 message: formatter.Invoke(state, exception));
 
-            for(int i = 0; i < exceptionTree.Count; i++)
+            bool firstException = true;
+            for (int i = exceptionTree.Count - 1; i >= 0 ; i--)
             {
                 (Guid Id, Exception Exception) = exceptionTree[i];
 
@@ -103,10 +106,10 @@ namespace SqliteLogger
                     serializedData = JsonSerializer.Serialize(Exception.Data);
                 }
 
-                string? nextId = null;
-                if (i < exceptionTree.Count - 1)
+                string? innerExceptionId = null;
+                if (!firstException)
                 {
-                    nextId = exceptionTree[i + 1].Id.ToString(); ;
+                    innerExceptionId = exceptionTree[i + 1].Id.ToString();
                 }
 
                 _connection.LogException(
@@ -114,12 +117,14 @@ namespace SqliteLogger
                     sequence: i,
                     id: Id.ToString(),
                     data: serializedData,
-                    hresult: Exception.HResult,
-                    innerexceptionid: nextId,
+                    hResult: Exception.HResult,
+                    innerExceptionId: innerExceptionId,
                     message: Exception.Message,
                     source: Exception.Source,
-                    stacktrace: Exception.StackTrace,
-                    targetsite: Exception.TargetSite?.Name);
+                    stackTrace: Exception.StackTrace,
+                    targetSite: Exception.TargetSite?.Name);
+
+                firstException = false;
             }
         }
 
