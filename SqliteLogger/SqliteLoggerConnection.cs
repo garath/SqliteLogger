@@ -14,7 +14,7 @@ namespace SqliteLogger
             _connection.Open();
         }
 
-        public IDisposable BeginScope()
+        public IDisposable BeginScope() 
         {
             if (_scope == null)
             {
@@ -40,7 +40,7 @@ namespace SqliteLogger
             command.Parameters.AddWithValue("@name", name);
             command.Parameters.AddWithValue("@level", level);
             command.Parameters.AddWithValue("@state", state);
-            command.Parameters.AddWithValue("@exceptionId", exceptionId ?? DBNull.Value.ToString());
+            command.Parameters.AddWithValue("@exceptionId", exceptionId == null ? DBNull.Value : exceptionId);
             command.Parameters.AddWithValue("@message", message);
 
             command.ExecuteNonQuery();
@@ -60,7 +60,7 @@ namespace SqliteLogger
             command.Parameters.AddWithValue("@timestamp", timestamp);
             command.Parameters.AddWithValue("@sequence", sequence);
             command.Parameters.AddWithValue("@id", id);
-            command.Parameters.AddWithValue("@data", data ?? DBNull.Value.ToString());
+            command.Parameters.AddWithValue("@data", data == null ? DBNull.Value : data);
             command.Parameters.AddWithValue("@hresult", hresult == null ? DBNull.Value : hresult);
             command.Parameters.AddWithValue("@innerExceptionId", innerexceptionid == null ? DBNull.Value : innerexceptionid);
             command.Parameters.AddWithValue("@message", message);
