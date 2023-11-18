@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Console", "Console\Console.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks", "Benchmarks\Benchmarks.csproj", "{170C219C-A9BC-4FA4-B472-6B4A8E50C626}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleStress", "ConsoleStress\ConsoleStress.csproj", "{9CF1D23E-82F2-4981-BFA7-09DC816FD13B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleStress", "ConsoleStress\ConsoleStress.csproj", "{9CF1D23E-82F2-4981-BFA7-09DC816FD13B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqliteLogger.Tests", "SqliteLogger.Tests\SqliteLogger.Tests.csproj", "{64ADA404-ED87-46B5-B8D1-1D465F5D61A4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{9CF1D23E-82F2-4981-BFA7-09DC816FD13B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9CF1D23E-82F2-4981-BFA7-09DC816FD13B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9CF1D23E-82F2-4981-BFA7-09DC816FD13B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64ADA404-ED87-46B5-B8D1-1D465F5D61A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64ADA404-ED87-46B5-B8D1-1D465F5D61A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64ADA404-ED87-46B5-B8D1-1D465F5D61A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64ADA404-ED87-46B5-B8D1-1D465F5D61A4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
