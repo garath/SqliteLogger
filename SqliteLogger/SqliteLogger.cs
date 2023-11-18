@@ -81,7 +81,7 @@ namespace SqliteLogger
             while (nextException != null)
             {
                 Guid exceptionId = Guid.NewGuid();
-                exceptionTree.Add((exceptionId, exception));
+                exceptionTree.Add((exceptionId, nextException));
                 nextException = nextException.InnerException;
             }
 
