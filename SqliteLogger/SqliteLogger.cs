@@ -18,7 +18,7 @@ public sealed class SqliteLogger : ILogger, IDisposable
         _connection = connection;
     }
 
-    public IDisposable BeginScope<TState>(TState state)
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull
     {
         return ScopeProvider.Push(state);
     }
@@ -28,7 +28,7 @@ public sealed class SqliteLogger : ILogger, IDisposable
         return true;
     }
 
-    void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+    void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         if (!IsEnabled(logLevel))
         {
@@ -61,7 +61,7 @@ public sealed class SqliteLogger : ILogger, IDisposable
             }
             else
             {
-                string? scopeString = scope.ToString();
+                string? scopeString = scope?.ToString();
                 if (scopeString is not null)
                 {
                     unnamedScopes.Add(scopeString);

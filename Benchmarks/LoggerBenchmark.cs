@@ -10,8 +10,8 @@ namespace Benchmarks
     [MarkdownExporterAttribute.GitHub]
     public class LoggerBenchmark
     {
-        private ILogger<Program> logger;
-        private ILoggerFactory loggerFactory;
+        private ILogger<Program> logger = null!;
+        private ILoggerFactory loggerFactory = null!;
 
         [ParamsAllValues]
         public bool UseQueue;

@@ -13,8 +13,8 @@ namespace Benchmarks
     [MarkdownExporterAttribute.GitHub]
     public class ScopeBenchmark
     {
-        private ILogger<Program> logger;
-        private ILoggerFactory loggerFactory;
+        private ILogger<Program> logger = null!;
+        private ILoggerFactory loggerFactory = null!;
 
         public static IEnumerable<IReadOnlyCollection<KeyValuePair<string, object?>>> ScopeGenerator()
         {
@@ -46,7 +46,7 @@ namespace Benchmarks
         [ArgumentsSource(nameof(ScopeGenerator))]
         public void SqliteLoggerInMemory(IReadOnlyCollection<KeyValuePair<string, object?>> scopeCollection)
         {
-            using IDisposable scope = logger.BeginScope(scopeCollection);
+            using IDisposable? scope = logger.BeginScope(scopeCollection);
             logger.LogInformation("Hello World!");
         }
     }

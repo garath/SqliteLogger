@@ -17,5 +17,5 @@ internal class NullScopeProvider : IExternalScopeProvider
         // Do nothing
     }
 
-    public IDisposable Push(object state) => NullDisposable.Instance;
+    public IDisposable Push(object? state) => NullDisposable.Instance;
 }

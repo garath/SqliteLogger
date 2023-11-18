@@ -64,22 +64,22 @@ namespace Console
             IReadOnlyList<KeyValuePair<string, object?>> mediumScope = new List<KeyValuePair<string, object?>>() { new("medium1", "value1"), new("medium2", "value2") };
             Dictionary<string, object?> largeScope = new() { { "large1", 1000 }, { "large2", 2000 } };
 
-            using IDisposable tinyLoggerScope = _logger.BeginScope("[scope is enabled]");
+            using IDisposable? tinyLoggerScope = _logger.BeginScope("[scope is enabled]");
             _logger.LogInformation("Log with one scope");
 
-            using IDisposable smallLoggerScope = _logger.BeginScope(smallScope);
+            using IDisposable? smallLoggerScope = _logger.BeginScope(smallScope);
             _logger.LogInformation("Log with two scopes");
 
-            using IDisposable mediumLoggerScope = _logger.BeginScope(mediumScope);
+            using IDisposable? mediumLoggerScope = _logger.BeginScope(mediumScope);
             _logger.LogInformation("Each log message is fit in a single line.");
 
-            using IDisposable largeLoggerScope = _logger.BeginScope(largeScope);
+            using IDisposable? largeLoggerScope = _logger.BeginScope(largeScope);
             _logger.LogInformation("This is a structured {message}", "MESSAGE");
 
-            using IDisposable extraLargeLoggerScope = _logger.BeginScope("One more message");
+            using IDisposable? extraLargeLoggerScope = _logger.BeginScope("One more message");
             _logger.LogInformation("Add one more string scope");
 
-            using IDisposable ultraLargeLoggerScope = _logger.BeginScope(1234);
+            using IDisposable? ultraLargeLoggerScope = _logger.BeginScope(1234);
             _logger.LogInformation("Add an integer");
         }
 
@@ -103,7 +103,7 @@ namespace Console
             //  @ will format the object as JSON
             //  $ forces ToString()
 
-            Object o = null;
+            Object? o = null;
 
             _logger.LogDebug("null case. Result:  Test NULL");
             _logger.LogInformation("Test {value1}", o);
