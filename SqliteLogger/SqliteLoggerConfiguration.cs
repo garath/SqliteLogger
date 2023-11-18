@@ -1,13 +1,12 @@
 ﻿using System;
 
-namespace SqliteLogger
+namespace SqliteLogger;
+
+public class SqliteLoggerConfiguration
 {
-    public class SqliteLoggerConfiguration
-    {
-        public string FilePath { get; set; }
+    public string FilePath { get; set; }
 
-        public bool UseQueue { get; set; } = false;
+    public bool UseQueue { get; set; } = false;
 
-        public TimeSpan DelayBetweenQueueDrain { get; set; } = TimeSpan.FromMilliseconds(500.0); // min value = 1 msec
-    }
+    public TimeSpan DelayBetweenQueueDrain { get; set; } = TimeSpan.FromMilliseconds(500.0); // min value = 1 msec
 }

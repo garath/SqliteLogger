@@ -3,35 +3,34 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SqliteLogger
+namespace SqliteLogger;
+
+internal class LogQueueTask
 {
-    internal class LogQueueTask
+    private readonly SqliteConnection _source;
+
+    public LogQueueTask(SqliteConnection source)
     {
-        private readonly SqliteConnection _source;
+        _source = source;
+    }
 
-        public LogQueueTask(SqliteConnection source)
+    public TimeSpan Delay { get; set; }
+
+    public async Task RunAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
         {
-            _source = source;
-        }
+            await Task.Delay(Delay, CancellationToken.None).ConfigureAwait(false);
 
-        public TimeSpan Delay { get; set; }
-
-        public async Task RunAsync(CancellationToken stoppingToken)
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                await Task.Delay(Delay, CancellationToken.None).ConfigureAwait(false);
-
-                SqliteCommand command = _source.CreateCommand();
-                command.CommandText =
-                    "BEGIN IMMEDIATE TRANSACTION; " +
-                    "INSERT INTO file.exceptions SELECT * FROM main.exceptions; " +
-                    "DELETE FROM main.exceptions; " +
-                    "INSERT INTO file.traces SELECT * FROM main.traces; " +
-                    "DELETE FROM main.traces; " +
-                    "COMMIT;";
-                command.ExecuteNonQuery();
-            }
+            SqliteCommand command = _source.CreateCommand();
+            command.CommandText =
+                "BEGIN IMMEDIATE TRANSACTION; " +
+                "INSERT INTO file.exceptions SELECT * FROM main.exceptions; " +
+                "DELETE FROM main.exceptions; " +
+                "INSERT INTO file.traces SELECT * FROM main.traces; " +
+                "DELETE FROM main.traces; " +
+                "COMMIT;";
+            command.ExecuteNonQuery();
         }
     }
 }

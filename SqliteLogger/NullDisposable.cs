@@ -1,19 +1,18 @@
 ﻿using System;
 
-namespace SqliteLogger
+namespace SqliteLogger;
+
+internal class NullDisposable : IDisposable
 {
-    internal class NullDisposable : IDisposable
+    public static readonly IDisposable Instance = new NullDisposable();
+
+    private NullDisposable()
     {
-        public static readonly IDisposable Instance = new NullDisposable();
 
-        private NullDisposable()
-        {
+    }
 
-        }
-
-        public void Dispose()
-        {
-            return;
-        }
+    public void Dispose()
+    {
+        return;
     }
 }
